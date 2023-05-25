@@ -1,0 +1,76 @@
+<!DOCTYPE CrossStudio_Project_File>
+<solution Name="Project" target="8" version="2">
+  <project Name="Project">
+    <configuration
+      LIBRARY_IO_TYPE="RTT"
+      Name="Common"
+      arm_architecture="v7EM"
+      arm_compiler_variant="SEGGER"
+      arm_core_type="Cortex-M4"
+      arm_endian="Little"
+      arm_fp_abi="Hard"
+      arm_fpu_type="FPv4-SP-D16"
+      arm_linker_variant="SEGGER"
+      arm_target_device_name="GD32F450ZK"
+      arm_target_interface_type="SWD"
+      c_preprocessor_definitions="USE_STDPERIPH_DRIVER;GD32F450"
+      c_user_include_directories="../;../Drivers/GD32F4xx_standard_peripheral/Include;../Drivers/CMSIS/Core/Include;../Drivers/CMSIS/Device/GD32F4xx/Include"
+      debug_start_from_entry_point_symbol="No"
+      debug_target_connection="J-Link"
+      gcc_c_language_standard="c17"
+      gcc_cplusplus_language_standard="c++17"
+      link_linker_script_file="$(ProjectDir)/GD32F4xx_Flash_Variant1.icf"
+      linker_memory_map_file="$(ProjectDir)/GD32F450ZK_MemoryMap.xml"
+      linker_section_placements_segments="FLASH1 RX 0x08000000 0x00100000;FLASH2 RX 0x08100000 0x00200000;RAM1 RWX 0x20000000 0x00030000;"
+      project_directory=""
+      project_type="Executable"
+      speed="15000" />
+    <folder Name="Application">
+      <file file_name="../gd32f450z_eval.c" />
+      <file file_name="../gd32f4xx_it.c" />
+      <file file_name="../main.c" />
+      <file file_name="../systick.c" />
+    </folder>
+    <folder Name="Drivers">
+      <folder Name="CMSIS">
+        <file file_name="../Drivers/CMSIS/Device/GD32F4xx/Source/system_gd32f4xx.c" />
+      </folder>
+      <folder Name="GD32F4xx_Peripherals">
+        <file file_name="../Drivers/GD32F4xx_standard_peripheral/Source/gd32f4xx_adc.c" />
+        <file file_name="../Drivers/GD32F4xx_standard_peripheral/Source/gd32f4xx_can.c" />
+        <file file_name="../Drivers/GD32F4xx_standard_peripheral/Source/gd32f4xx_crc.c" />
+        <file file_name="../Drivers/GD32F4xx_standard_peripheral/Source/gd32f4xx_ctc.c" />
+        <file file_name="../Drivers/GD32F4xx_standard_peripheral/Source/gd32f4xx_dac.c" />
+        <file file_name="../Drivers/GD32F4xx_standard_peripheral/Source/gd32f4xx_dbg.c" />
+        <file file_name="../Drivers/GD32F4xx_standard_peripheral/Source/gd32f4xx_dci.c" />
+        <file file_name="../Drivers/GD32F4xx_standard_peripheral/Source/gd32f4xx_dma.c" />
+        <file file_name="../Drivers/GD32F4xx_standard_peripheral/Source/gd32f4xx_enet.c" />
+        <file file_name="../Drivers/GD32F4xx_standard_peripheral/Source/gd32f4xx_exmc.c" />
+        <file file_name="../Drivers/GD32F4xx_standard_peripheral/Source/gd32f4xx_exti.c" />
+        <file file_name="../Drivers/GD32F4xx_standard_peripheral/Source/gd32f4xx_fmc.c" />
+        <file file_name="../Drivers/GD32F4xx_standard_peripheral/Source/gd32f4xx_fwdgt.c" />
+        <file file_name="../Drivers/GD32F4xx_standard_peripheral/Source/gd32f4xx_gpio.c" />
+        <file file_name="../Drivers/GD32F4xx_standard_peripheral/Source/gd32f4xx_i2c.c" />
+        <file file_name="../Drivers/GD32F4xx_standard_peripheral/Source/gd32f4xx_ipa.c" />
+        <file file_name="../Drivers/GD32F4xx_standard_peripheral/Source/gd32f4xx_iref.c" />
+        <file file_name="../Drivers/GD32F4xx_standard_peripheral/Source/gd32f4xx_misc.c" />
+        <file file_name="../Drivers/GD32F4xx_standard_peripheral/Source/gd32f4xx_pmu.c" />
+        <file file_name="../Drivers/GD32F4xx_standard_peripheral/Source/gd32f4xx_rcu.c" />
+        <file file_name="../Drivers/GD32F4xx_standard_peripheral/Source/gd32f4xx_rtc.c" />
+        <file file_name="../Drivers/GD32F4xx_standard_peripheral/Source/gd32f4xx_sdio.c" />
+        <file file_name="../Drivers/GD32F4xx_standard_peripheral/Source/gd32f4xx_spi.c" />
+        <file file_name="../Drivers/GD32F4xx_standard_peripheral/Source/gd32f4xx_syscfg.c" />
+        <file file_name="../Drivers/GD32F4xx_standard_peripheral/Source/gd32f4xx_timer.c" />
+        <file file_name="../Drivers/GD32F4xx_standard_peripheral/Source/gd32f4xx_tli.c" />
+        <file file_name="../Drivers/GD32F4xx_standard_peripheral/Source/gd32f4xx_trng.c" />
+        <file file_name="../Drivers/GD32F4xx_standard_peripheral/Source/gd32f4xx_usart.c" />
+        <file file_name="../Drivers/GD32F4xx_standard_peripheral/Source/gd32f4xx_wwdgt.c" />
+      </folder>
+    </folder>
+    <folder Name="Internal Files">
+      <file file_name="GD32F4xx_Startup.s" />
+      <file file_name="$(StudioDir)/samples/SEGGER_THUMB_Startup.s" />
+      <file file_name="gd32f450_470_Vectors.s" />
+    </folder>
+  </project>
+</solution>
