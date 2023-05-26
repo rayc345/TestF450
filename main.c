@@ -57,41 +57,53 @@ int main(void)
 
     /* enable the Tamper key GPIO clock */
     rcu_periph_clock_enable(RCU_GPIOC);
+    rcu_periph_clock_enable(RCU_SYSCFG);
     /* configure button pin as input */
     gpio_mode_set(GPIOC, GPIO_MODE_INPUT, GPIO_PUPD_NONE, GPIO_PIN_13);
 
+    /* enable and set key EXTI interrupt priority */
+    nvic_irq_enable(EXTI10_15_IRQn, 2U, 0U);
+    /* connect key EXTI line to key GPIO pin */
+    syscfg_exti_line_config(EXTI_SOURCE_GPIOC, EXTI_SOURCE_PIN13);
+    /* configure key EXTI line */
+    exti_init(EXTI_13, EXTI_INTERRUPT, EXTI_TRIG_RISING);
+    exti_interrupt_flag_clear(EXTI_13);
+
     while (1)
     {
-        if (RESET == gpio_input_bit_get(GPIOC, GPIO_PIN_13))
-        {
-            delay_1ms(100);
-            if (RESET == gpio_input_bit_get(GPIOC, GPIO_PIN_13))
-            {
-                bRunning = !bRunning;
-                delay_1ms(500);
-            }
-        }
-        if (bRunning)
-        {
-            gpio_bit_set(GPIOD, GPIO_PIN_4);
-            gpio_bit_reset(GPIOD, GPIO_PIN_5);
-            gpio_bit_reset(GPIOG, GPIO_PIN_3);
+        gpio_bit_set(GPIOD, GPIO_PIN_4);
+        gpio_bit_reset(GPIOD, GPIO_PIN_5);
+        gpio_bit_reset(GPIOG, GPIO_PIN_3);
 
-            delay_1ms(500);
+        while (!bRunning)
+            ;
+        delay_1ms(500);
 
-            /* turn on LED2, turn off LED1 and LED3 */
-            gpio_bit_set(GPIOD, GPIO_PIN_5);
-            gpio_bit_reset(GPIOD, GPIO_PIN_4);
-            gpio_bit_reset(GPIOG, GPIO_PIN_3);
+        /* turn on LED2, turn off LED1 and LED3 */
+        gpio_bit_set(GPIOD, GPIO_PIN_5);
+        gpio_bit_reset(GPIOD, GPIO_PIN_4);
+        gpio_bit_reset(GPIOG, GPIO_PIN_3);
 
-            delay_1ms(500);
+        while (!bRunning)
+            ;
+        delay_1ms(500);
 
-            /* turn on LED3, turn off LED1 and LED2 */
-            gpio_bit_set(GPIOG, GPIO_PIN_3);
-            gpio_bit_reset(GPIOD, GPIO_PIN_4);
-            gpio_bit_reset(GPIOD, GPIO_PIN_5);
+        /* turn on LED3, turn off LED1 and LED2 */
+        gpio_bit_set(GPIOG, GPIO_PIN_3);
+        gpio_bit_reset(GPIOD, GPIO_PIN_4);
+        gpio_bit_reset(GPIOD, GPIO_PIN_5);
 
-            delay_1ms(500);
-        }
+        while (!bRunning)
+            ;
+        delay_1ms(500);
+    }
+}
+
+void EXTI10_15_IRQHandler(void)
+{
+    if (RESET != exti_interrupt_flag_get(EXTI_13))
+    {
+        exti_interrupt_flag_clear(EXTI_13);
+        bRunning = !bRunning;
     }
 }
