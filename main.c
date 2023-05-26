@@ -35,7 +35,6 @@ OF SUCH DAMAGE.
 #include <stdio.h>
 #include "gd32f4xx.h"
 #include "systick.h"
-#include "SEGGER_RTT.h"
 
 /*!
     \brief      main function
@@ -94,7 +93,7 @@ void TIMER6_IRQHandler(void)
         {
             hours = 0;
         }
-        SEGGER_RTT_printf(0, "One second elapsed %d:%d:%d\n", hours, minutes, seconds);
+        printf("One second elapsed %d:%d:%d\n", hours, minutes, seconds);
         gpio_bit_toggle(GPIOD, GPIO_PIN_4);
     }
     timer_interrupt_flag_clear(TIMER6, TIMER_INT_UP);
