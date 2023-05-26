@@ -32,10 +32,10 @@ WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWIS
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
 OF SUCH DAMAGE.
 */
-
+#include <stdio.h>
 #include "gd32f4xx.h"
-#include "gd32f450z_eval.h"
 #include "systick.h"
+#include "SEGGER_RTT.h"
 
 /*!
     \brief      main function
@@ -48,39 +48,54 @@ int main(void)
     /* configure systick */
     systick_config();
 
-    /* enable the LEDs GPIO clock */
     rcu_periph_clock_enable(RCU_GPIOD);
-    rcu_periph_clock_enable(RCU_GPIOG);
 
-    /* configure LED1 and LED2 GPIO port */
-    gpio_mode_set(GPIOD, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO_PIN_4 | GPIO_PIN_5);
-    gpio_output_options_set(GPIOE, GPIO_OTYPE_PP, GPIO_OSPEED_50MHZ, GPIO_PIN_4 | GPIO_PIN_5);
-    /* reset LED1 and LED2 GPIO pin */
-    gpio_bit_reset(GPIOE, GPIO_PIN_4 | GPIO_PIN_5);
+    rcu_timer_clock_prescaler_config(RCU_TIMER_PSC_MUL4);
+    gpio_mode_set(GPIOD, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO_PIN_4);
 
-    /* configure LED3 GPIO port */
-    gpio_mode_set(GPIOG, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO_PIN_3);
-    gpio_output_options_set(GPIOG, GPIO_OTYPE_PP, GPIO_OSPEED_50MHZ, GPIO_PIN_3);
-    /* reset LED3 GPIO pin */
-    gpio_bit_reset(GPIOG, GPIO_PIN_3);
+    timer_parameter_struct timer6initpara;
+    rcu_periph_clock_enable(RCU_TIMER6);
 
-    while(1) {
-        /* turn on LED1, turn off LED2 and LED3 */
-        gpio_bit_set(GPIOD, GPIO_PIN_4);
-        gpio_bit_reset(GPIOD, GPIO_PIN_5);
-        gpio_bit_reset(GPIOG, GPIO_PIN_3);
-        delay_1ms(1000);
+    timer6initpara.clockdivision = TIMER_CKDIV_DIV1;
+    timer6initpara.alignedmode = TIMER_COUNTER_EDGE;
+    timer6initpara.counterdirection = TIMER_COUNTER_UP;
+    timer6initpara.period = 10000 - 1;
+    timer6initpara.prescaler = 20000 - 1;
+    timer_init(TIMER6, &timer6initpara);
+    timer_interrupt_enable(TIMER6, TIMER_INT_UP);
+    nvic_irq_enable(TIMER6_IRQn, 1, 1);
+    timer_enable(TIMER6);
 
-        /* turn on LED2, turn off LED1 and LED3 */
-        gpio_bit_set(GPIOD, GPIO_PIN_5);
-        gpio_bit_reset(GPIOD, GPIO_PIN_4);
-        gpio_bit_reset(GPIOG, GPIO_PIN_3);
-        delay_1ms(1000);
-
-        /* turn on LED3, turn off LED1 and LED2 */
-        gpio_bit_set(GPIOG, GPIO_PIN_3);
-        gpio_bit_reset(GPIOD, GPIO_PIN_4);
-        gpio_bit_reset(GPIOD, GPIO_PIN_5);
-        delay_1ms(1000);
+    while (1)
+    {
+        // delay_1ms(1000);
+        // SEGGER_RTT_printf(0, "Test\n");
     }
+}
+
+uint16_t seconds, minutes, hours;
+
+void TIMER6_IRQHandler(void)
+{
+    if (SET == timer_interrupt_flag_get(TIMER6, TIMER_INT_UP))
+    {
+        seconds++;
+        if (seconds == 60)
+        {
+            seconds = 0;
+            minutes++;
+        }
+        if (minutes == 60)
+        {
+            minutes = 0;
+            hours++;
+        }
+        if (hours == 24)
+        {
+            hours = 0;
+        }
+        SEGGER_RTT_printf(0, "One second elapsed %d:%d:%d\n", hours, minutes, seconds);
+        gpio_bit_toggle(GPIOD, GPIO_PIN_4);
+    }
+    timer_interrupt_flag_clear(TIMER6, TIMER_INT_UP);
 }

@@ -2,7 +2,7 @@
 <solution Name="Project" target="8" version="2">
   <project Name="Project">
     <configuration
-      LIBRARY_IO_TYPE="RTT"
+      LIBRARY_IO_TYPE="None"
       Name="Common"
       arm_architecture="v7EM"
       arm_compiler_variant="SEGGER"
@@ -14,7 +14,7 @@
       arm_target_device_name="GD32F450ZK"
       arm_target_interface_type="SWD"
       c_preprocessor_definitions="USE_STDPERIPH_DRIVER;GD32F450"
-      c_user_include_directories="../;../Drivers/GD32F4xx_standard_peripheral/Include;../Drivers/CMSIS/Core/Include;../Drivers/CMSIS/Device/GD32F4xx/Include"
+      c_user_include_directories="../;../Middleware/RTT;../Drivers/GD32F4xx_standard_peripheral/Include;../Drivers/CMSIS/Core/Include;../Drivers/CMSIS/Device/GD32F4xx/Include"
       debug_start_from_entry_point_symbol="No"
       debug_target_connection="J-Link"
       gcc_c_language_standard="c17"
@@ -26,7 +26,6 @@
       project_type="Executable"
       speed="15000" />
     <folder Name="Application">
-      <file file_name="../gd32f450z_eval.c" />
       <file file_name="../gd32f4xx_it.c" />
       <file file_name="../main.c" />
       <file file_name="../systick.c" />
@@ -71,6 +70,14 @@
       <file file_name="GD32F4xx_Startup.s" />
       <file file_name="$(StudioDir)/samples/SEGGER_THUMB_Startup.s" />
       <file file_name="gd32f450_470_Vectors.s" />
+    </folder>
+    <folder Name="Middleware">
+      <folder Name="RTT">
+        <file file_name="../Middleware/RTT/SEGGER_RTT.c" />
+        <file file_name="../Middleware/RTT/SEGGER_RTT.h" />
+        <file file_name="../Middleware/RTT/SEGGER_RTT_Conf.h" />
+        <file file_name="../Middleware/RTT/SEGGER_RTT_printf.c" />
+      </folder>
     </folder>
   </project>
 </solution>
