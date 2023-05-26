@@ -37,73 +37,66 @@ OF SUCH DAMAGE.
 #include "gd32f4xx.h"
 #include "systick.h"
 
-/*!
-    \brief      main function
-    \param[in]  none
-    \param[out] none
-    \retval     none
-*/
-bool bRunning;
+void SendViaUART(const uint8_t *pData, const uint16_t uLen)
+{
+    for (uint16_t uCount = 0; uCount < uLen; uCount++)
+    {
+        usart_data_transmit(USART2, *(pData + uCount));
+        while (RESET == usart_flag_get(USART2, USART_FLAG_TBE))
+            ;
+    }
+}
+
+void ReceiveViaUART(uint8_t *pData, const uint16_t uLen)
+{
+    for (uint16_t uCount = 0; uCount < uLen; uCount++)
+    {
+        while (RESET == usart_flag_get(USART2, USART_FLAG_RBNE))
+            ;
+        *(pData + uCount) = usart_data_receive(USART2);
+    }
+}
+
 int main(void)
 {
     /* configure systick */
     systick_config();
 
-    rcu_periph_clock_enable(RCU_GPIOD);
-    rcu_periph_clock_enable(RCU_GPIOG);
-
-    gpio_mode_set(GPIOD, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO_PIN_4 | GPIO_PIN_5);
-    gpio_mode_set(GPIOG, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO_PIN_3);
-
-    /* enable the Tamper key GPIO clock */
     rcu_periph_clock_enable(RCU_GPIOC);
-    rcu_periph_clock_enable(RCU_SYSCFG);
-    /* configure button pin as input */
-    gpio_mode_set(GPIOC, GPIO_MODE_INPUT, GPIO_PUPD_NONE, GPIO_PIN_13);
 
-    /* enable and set key EXTI interrupt priority */
-    nvic_irq_enable(EXTI10_15_IRQn, 2U, 0U);
-    /* connect key EXTI line to key GPIO pin */
-    syscfg_exti_line_config(EXTI_SOURCE_GPIOC, EXTI_SOURCE_PIN13);
-    /* configure key EXTI line */
-    exti_init(EXTI_13, EXTI_INTERRUPT, EXTI_TRIG_RISING);
-    exti_interrupt_flag_clear(EXTI_13);
+    /* enable USART clock */
+    rcu_periph_clock_enable(RCU_USART2);
+
+    gpio_mode_set(GPIOA, GPIO_MODE_INPUT, GPIO_PUPD_NONE, GPIO_PIN_15);
+
+    /* connect port to USART2_Tx */
+    gpio_af_set(GPIOC, GPIO_AF_7, GPIO_PIN_10);
+
+    /* connect port to USART2_Rx */
+    gpio_af_set(GPIOC, GPIO_AF_7, GPIO_PIN_11);
+
+    /* configure USART Tx as alternate function push-pull */
+    gpio_mode_set(GPIOC, GPIO_MODE_AF, GPIO_PUPD_PULLUP, GPIO_PIN_10);
+    gpio_output_options_set(GPIOC, GPIO_OTYPE_PP, GPIO_OSPEED_50MHZ, GPIO_PIN_10);
+
+    /* configure USART Rx as alternate function push-pull */
+    gpio_mode_set(GPIOC, GPIO_MODE_AF, GPIO_PUPD_PULLUP, GPIO_PIN_11);
+    gpio_output_options_set(GPIOC, GPIO_OTYPE_PP, GPIO_OSPEED_50MHZ, GPIO_PIN_11);
+
+    /* USART configure */
+    usart_deinit(USART2);
+    usart_baudrate_set(USART2, 115200U);
+    usart_receive_config(USART2, USART_RECEIVE_ENABLE);
+    usart_transmit_config(USART2, USART_TRANSMIT_ENABLE);
+    usart_enable(USART2);
 
     while (1)
     {
-        gpio_bit_set(GPIOD, GPIO_PIN_4);
-        gpio_bit_reset(GPIOD, GPIO_PIN_5);
-        gpio_bit_reset(GPIOG, GPIO_PIN_3);
-
-        while (!bRunning)
-            ;
-        delay_1ms(500);
-
-        /* turn on LED2, turn off LED1 and LED3 */
-        gpio_bit_set(GPIOD, GPIO_PIN_5);
-        gpio_bit_reset(GPIOD, GPIO_PIN_4);
-        gpio_bit_reset(GPIOG, GPIO_PIN_3);
-
-        while (!bRunning)
-            ;
-        delay_1ms(500);
-
-        /* turn on LED3, turn off LED1 and LED2 */
-        gpio_bit_set(GPIOG, GPIO_PIN_3);
-        gpio_bit_reset(GPIOD, GPIO_PIN_4);
-        gpio_bit_reset(GPIOD, GPIO_PIN_5);
-
-        while (!bRunning)
-            ;
-        delay_1ms(500);
-    }
-}
-
-void EXTI10_15_IRQHandler(void)
-{
-    if (RESET != exti_interrupt_flag_get(EXTI_13))
-    {
-        exti_interrupt_flag_clear(EXTI_13);
-        bRunning = !bRunning;
+        printf("Start to send\n");
+        const uint8_t uText[] = "TestText";
+        SendViaUART(uText, 9);
+        uint8_t uTextReceive[9];
+        ReceiveViaUART(uTextReceive, 9);
+        printf("Gpt %s\n", uTextReceive);
     }
 }
