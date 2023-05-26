@@ -33,6 +33,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 OF SUCH DAMAGE.
 */
 #include <stdio.h>
+#include <stdbool.h>
 #include "gd32f4xx.h"
 #include "systick.h"
 
@@ -42,59 +43,55 @@ OF SUCH DAMAGE.
     \param[out] none
     \retval     none
 */
+bool bRunning;
 int main(void)
 {
     /* configure systick */
     systick_config();
 
     rcu_periph_clock_enable(RCU_GPIOD);
+    rcu_periph_clock_enable(RCU_GPIOG);
 
-    rcu_timer_clock_prescaler_config(RCU_TIMER_PSC_MUL4);
-    gpio_mode_set(GPIOD, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO_PIN_4);
+    gpio_mode_set(GPIOD, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO_PIN_4 | GPIO_PIN_5);
+    gpio_mode_set(GPIOG, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO_PIN_3);
 
-    timer_parameter_struct timer6initpara;
-    rcu_periph_clock_enable(RCU_TIMER6);
-
-    timer6initpara.clockdivision = TIMER_CKDIV_DIV1;
-    timer6initpara.alignedmode = TIMER_COUNTER_EDGE;
-    timer6initpara.counterdirection = TIMER_COUNTER_UP;
-    timer6initpara.period = 10000 - 1;
-    timer6initpara.prescaler = 20000 - 1;
-    timer_init(TIMER6, &timer6initpara);
-    timer_interrupt_enable(TIMER6, TIMER_INT_UP);
-    nvic_irq_enable(TIMER6_IRQn, 1, 1);
-    timer_enable(TIMER6);
+    /* enable the Tamper key GPIO clock */
+    rcu_periph_clock_enable(RCU_GPIOC);
+    /* configure button pin as input */
+    gpio_mode_set(GPIOC, GPIO_MODE_INPUT, GPIO_PUPD_NONE, GPIO_PIN_13);
 
     while (1)
     {
-        // delay_1ms(1000);
-        // SEGGER_RTT_printf(0, "Test\n");
-    }
-}
+        if (RESET == gpio_input_bit_get(GPIOC, GPIO_PIN_13))
+        {
+            delay_1ms(100);
+            if (RESET == gpio_input_bit_get(GPIOC, GPIO_PIN_13))
+            {
+                bRunning = !bRunning;
+                delay_1ms(500);
+            }
+        }
+        if (bRunning)
+        {
+            gpio_bit_set(GPIOD, GPIO_PIN_4);
+            gpio_bit_reset(GPIOD, GPIO_PIN_5);
+            gpio_bit_reset(GPIOG, GPIO_PIN_3);
 
-uint16_t seconds, minutes, hours;
+            delay_1ms(500);
 
-void TIMER6_IRQHandler(void)
-{
-    if (SET == timer_interrupt_flag_get(TIMER6, TIMER_INT_UP))
-    {
-        seconds++;
-        if (seconds == 60)
-        {
-            seconds = 0;
-            minutes++;
+            /* turn on LED2, turn off LED1 and LED3 */
+            gpio_bit_set(GPIOD, GPIO_PIN_5);
+            gpio_bit_reset(GPIOD, GPIO_PIN_4);
+            gpio_bit_reset(GPIOG, GPIO_PIN_3);
+
+            delay_1ms(500);
+
+            /* turn on LED3, turn off LED1 and LED2 */
+            gpio_bit_set(GPIOG, GPIO_PIN_3);
+            gpio_bit_reset(GPIOD, GPIO_PIN_4);
+            gpio_bit_reset(GPIOD, GPIO_PIN_5);
+
+            delay_1ms(500);
         }
-        if (minutes == 60)
-        {
-            minutes = 0;
-            hours++;
-        }
-        if (hours == 24)
-        {
-            hours = 0;
-        }
-        printf("One second elapsed %d:%d:%d\n", hours, minutes, seconds);
-        gpio_bit_toggle(GPIOD, GPIO_PIN_4);
     }
-    timer_interrupt_flag_clear(TIMER6, TIMER_INT_UP);
 }
