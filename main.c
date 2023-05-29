@@ -37,29 +37,6 @@ OF SUCH DAMAGE.
 #include "gd32f4xx.h"
 #include "systick.h"
 
-// void SendViaUART(const uint8_t *pData, const uint16_t uLen)
-// {
-//     for (uint16_t uCount = 0; uCount < uLen; uCount++)
-//     {
-//         usart_data_transmit(USART2, *(pData + uCount));
-//         while (RESET == usart_flag_get(USART2, USART_FLAG_TBE))
-//             ;
-//     }
-// }
-
-// void ReceiveViaUART(uint8_t *pData, const uint16_t uLen)
-// {
-//     for (uint16_t uCount = 0; uCount < uLen; uCount++)
-//     {
-//         while (RESET == usart_flag_get(USART2, USART_FLAG_RBNE))
-//             ;
-//         *(pData + uCount) = usart_data_receive(USART2);
-//     }
-// }
-
-#define BUFFER_SIZE (COUNTOF(tx_buffer))
-#define COUNTOF(a) (sizeof(a) / sizeof(*(a)))
-
 uint8_t tx_buffer[] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
                        0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F,
                        0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F,
@@ -77,9 +54,10 @@ uint8_t tx_buffer[] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x0
                        0xE0, 0xE1, 0xE2, 0xE3, 0xE4, 0xE5, 0xE6, 0xE7, 0xE8, 0xE9, 0xEA, 0xEB, 0xEC, 0xED, 0xEE, 0xEF,
                        0xF0, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF};
 
-uint8_t rx_buffer[BUFFER_SIZE];
-__IO uint16_t tx_counter = 0;
-uint32_t nbr_data_to_send = BUFFER_SIZE;
+#define ARRAYNUM(arr_name) (uint32_t)(sizeof(arr_name) / sizeof(*(arr_name)))
+uint8_t rx_buffer[ARRAYNUM(tx_buffer)];
+
+#define USART2_DATA_ADDRESS ((uint32_t)0x40004804)
 
 int main(void)
 {
@@ -114,9 +92,52 @@ int main(void)
     usart_transmit_config(USART2, USART_TRANSMIT_ENABLE);
     usart_enable(USART2);
 
-    nvic_irq_enable(USART2_IRQn, 0, 0);
-    usart_interrupt_enable(USART2, USART_INT_RBNE);
-    usart_interrupt_enable(USART2, USART_INT_TBE);
+    dma_single_data_parameter_struct dma_init_struct;
+    /* enable DMA0 */
+    rcu_periph_clock_enable(RCU_DMA0);
+    /* deinitialize DMA0 channel3(USART2 tx) */
+    dma_deinit(DMA0, DMA_CH3);
+    dma_init_struct.direction = DMA_MEMORY_TO_PERIPH;
+    dma_init_struct.memory0_addr = (uint32_t)tx_buffer;
+    dma_init_struct.memory_inc = DMA_MEMORY_INCREASE_ENABLE;
+    dma_init_struct.periph_memory_width = DMA_PERIPH_WIDTH_8BIT;
+    dma_init_struct.number = ARRAYNUM(tx_buffer);
+    uint32_t uPeriAddr = USART2_DATA_ADDRESS;
+    dma_init_struct.periph_addr = uPeriAddr;
+    dma_init_struct.periph_inc = DMA_PERIPH_INCREASE_DISABLE;
+    dma_init_struct.priority = DMA_PRIORITY_ULTRA_HIGH;
+    dma_single_data_mode_init(DMA0, DMA_CH3, &dma_init_struct);
+    /* configure DMA mode */
+    dma_circulation_disable(DMA0, DMA_CH3);
+    dma_channel_subperipheral_select(DMA0, DMA_CH3, DMA_SUBPERI4);
+
+    dma_deinit(DMA0, DMA_CH1);
+    dma_init_struct.direction = DMA_PERIPH_TO_MEMORY;
+    dma_init_struct.memory0_addr = (uint32_t)rx_buffer;
+    dma_single_data_mode_init(DMA0, DMA_CH1, &dma_init_struct);
+    /* configure DMA mode */
+    dma_circulation_disable(DMA0, DMA_CH1);
+    dma_channel_subperipheral_select(DMA0, DMA_CH1, DMA_SUBPERI4);
+
+    /* enable USART2 DMA channel transmission and reception */
+    dma_channel_enable(DMA0, DMA_CH3);
+    dma_channel_enable(DMA0, DMA_CH1);
+
+    /* USART DMA enable for transmission and reception */
+    usart_dma_transmit_config(USART2, USART_TRANSMIT_DMA_ENABLE);
+    usart_dma_receive_config(USART2, USART_RECEIVE_DMA_ENABLE);
+
+    /* wait until USART2 TX DMA0 channel transfer complete */
+    while (RESET == dma_flag_get(DMA0, DMA_CH3, DMA_INTF_FTFIF))
+    {
+    }
+
+    /* wait until USART2 RX DMA0 channel transfer complete */
+    while (RESET == dma_flag_get(DMA0, DMA_CH1, DMA_INTF_FTFIF))
+    {
+    }
+    for (uint16_t i = 0; i < 256; i++)
+        printf("%2X", rx_buffer[i]);
 
     while (1)
     {
@@ -126,32 +147,5 @@ int main(void)
         // uint8_t uTextReceive[9];
         // ReceiveViaUART(uTextReceive, 9);
         // printf("Gpt %s\n", uTextReceive);
-    }
-}
-
-void USART2_IRQHandler(void)
-{
-    if (RESET != usart_interrupt_flag_get(USART2, USART_INT_FLAG_RBNE))
-    {
-        /* Read one byte from the receive data register */
-        uint8_t uGot = (uint8_t)usart_data_receive(USART2);
-        printf("%c", uGot);
-        // if (rx_counter >= nbr_data_to_read)
-        // {
-        //     /* disable the USART2 receive interrupt */
-        //     usart_interrupt_disable(USART2, USART_INT_RBNE);
-        // }
-    }
-
-    if (RESET != usart_interrupt_flag_get(USART2, USART_INT_FLAG_TBE))
-    {
-        /* Write one byte to the transmit data register */
-        usart_data_transmit(USART2, tx_buffer[tx_counter++]);
-
-        if (tx_counter >= nbr_data_to_send)
-        {
-            /* disable the USART2 transmit interrupt */
-            usart_interrupt_disable(USART2, USART_INT_TBE);
-        }
     }
 }
