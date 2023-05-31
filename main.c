@@ -64,9 +64,9 @@ int main(void)
     adc_channel_length_config(ADC2, ADC_ROUTINE_CHANNEL, 2);
     adc_routine_channel_config(ADC2, 0, ADC_CHANNEL_4, ADC_SAMPLETIME_15);
     adc_routine_channel_config(ADC2, 1, ADC_CHANNEL_15, ADC_SAMPLETIME_15);
-    // adc_external_trigger_source_config(ADC2, ADC_ROUTINE_CHANNEL, ADC_EXTTRIG_ROUTINE_T1_CH1);
-    // adc_external_trigger_config(ADC2, ADC_ROUTINE_CHANNEL, EXTERNAL_TRIGGER_RISING);
-    adc_external_trigger_config(ADC2, ADC_ROUTINE_CHANNEL, EXTERNAL_TRIGGER_DISABLE);
+    adc_external_trigger_source_config(ADC2, ADC_ROUTINE_CHANNEL, ADC_EXTTRIG_ROUTINE_T1_CH1);
+    adc_external_trigger_config(ADC2, ADC_ROUTINE_CHANNEL, EXTERNAL_TRIGGER_RISING);
+    // adc_external_trigger_config(ADC2, ADC_ROUTINE_CHANNEL, EXTERNAL_TRIGGER_DISABLE);
     adc_dma_request_after_last_enable(ADC2);
     adc_dma_mode_enable(ADC2);
     adc_enable(ADC2);
@@ -123,7 +123,7 @@ int main(void)
     while (1)
     {
         delay_1ms(1000);
-        adc_software_trigger_enable(ADC2, ADC_ROUTINE_CHANNEL);
+        // adc_software_trigger_enable(ADC2, ADC_ROUTINE_CHANNEL);
     }
 }
 
