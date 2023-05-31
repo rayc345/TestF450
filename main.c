@@ -64,9 +64,10 @@ int main(void)
     adc_channel_length_config(ADC2, ADC_ROUTINE_CHANNEL, 2);
     adc_routine_channel_config(ADC2, 0, ADC_CHANNEL_4, ADC_SAMPLETIME_15);
     adc_routine_channel_config(ADC2, 1, ADC_CHANNEL_15, ADC_SAMPLETIME_15);
-    adc_external_trigger_source_config(ADC2, ADC_ROUTINE_CHANNEL, ADC_EXTTRIG_ROUTINE_T1_CH1);
-    adc_external_trigger_config(ADC2, ADC_ROUTINE_CHANNEL, EXTERNAL_TRIGGER_RISING);
-    // adc_dma_request_after_last_enable(ADC2);
+    // adc_external_trigger_source_config(ADC2, ADC_ROUTINE_CHANNEL, ADC_EXTTRIG_ROUTINE_T1_CH1);
+    // adc_external_trigger_config(ADC2, ADC_ROUTINE_CHANNEL, EXTERNAL_TRIGGER_RISING);
+    adc_external_trigger_config(ADC2, ADC_ROUTINE_CHANNEL, EXTERNAL_TRIGGER_DISABLE);
+    adc_dma_request_after_last_enable(ADC2);
     adc_dma_mode_enable(ADC2);
     adc_enable(ADC2);
     adc_calibration_enable(ADC2);
@@ -87,9 +88,7 @@ int main(void)
     dma_circulation_enable(DMA1, DMA_CH0);
     dma_channel_enable(DMA1, DMA_CH0);
 
-    // 设置dma中断优先级
     nvic_irq_enable(DMA1_Channel0_IRQn, 0, 0);
-    /* enable DMA transfer complete interrupt */
     dma_interrupt_enable(DMA1, DMA_CH0, DMA_CHXCTL_FTFIE);
 
     timer_oc_parameter_struct timer_ocintpara;
@@ -123,40 +122,18 @@ int main(void)
 
     while (1)
     {
-        // while (!dma_flag_get(DMA1, DMA_CH0, DMA_FLAG_FTF))
-        // {
-        // };
-
-        // dma_flag_clear(DMA1, DMA_CH0, DMA_FLAG_FTF);
-
-        // printf(" the data adc_value[0] is %d \r\n", adc_value[0]);
-        // printf(" the data adc_value[1] is %d \r\n", adc_value[1]);
-        // printf("\r\n");
-
-        // delay_1ms(500);
-        // uint16_t ADC_Value = ADC_ReadValue();
-        // printf("ADC Channel Value = %d\r\n ", ADC_Value);
+        delay_1ms(1000);
+        adc_software_trigger_enable(ADC2, ADC_ROUTINE_CHANNEL);
     }
 }
 
 void DMA1_Channel0_IRQHandler(void)
 {
-    //     while (!dma_flag_get(DMA1, DMA_CH0, DMA_FLAG_FTF))
-    // {
-    // };
-
-    // dma_flag_clear(DMA1, DMA_CH0, DMA_FLAG_FTF);
-
-    // printf(" the data adc_value[0] is %d \r\n", adc_value[0]);
-    // printf(" the data adc_value[1] is %d \r\n", adc_value[1]);
-    // printf("\r\n");
-
-    // 传输完成标志位
     if (dma_interrupt_flag_get(DMA1, DMA_CH0, DMA_INT_FLAG_FTF))
     {
 
-        printf(" the data adc_value[0] is %d \r\n", adc_value[0]);
-        printf(" the data adc_value[1] is %d \r\n", adc_value[1]);
+        printf(" the data adc_value[0] is %f \r\n", adc_value[0] * 8.06e-4);
+        printf(" the data adc_value[1] is %f \r\n", adc_value[1] * 8.06e-4);
         printf("\r\n");
         dma_interrupt_flag_clear(DMA1, DMA_CH0, DMA_INT_FLAG_FTF);
     }
